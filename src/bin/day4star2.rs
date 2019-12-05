@@ -30,6 +30,7 @@ pub fn valid_password(pw: &Password) -> bool {
     let mut last = None;
     let mut multi = 0;
     let mut found_two = false;
+    let mut found_two_done = false;
 
     for &digit in &pw.0 {
         highest = highest.max(digit);
@@ -42,6 +43,7 @@ pub fn valid_password(pw: &Password) -> bool {
             found_two = multi == 1;
         } else {
             multi = 0;
+            found_two_done = found_two || found_two_done;
         }
 
         multi += 1;
@@ -49,7 +51,7 @@ pub fn valid_password(pw: &Password) -> bool {
         last = Some(digit);
     }
 
-    found_two
+    found_two || found_two_done
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -83,5 +85,6 @@ mod test {
         assert!(valid_password(&123455usize.into()));
         assert!(valid_password(&112345usize.into()));
         assert!(valid_password(&111233usize.into()));
+        assert!(valid_password(&112333usize.into()));
     }
 }
