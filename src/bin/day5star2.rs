@@ -1,5 +1,21 @@
 use std::convert::{TryFrom, TryInto};
 use std::io::{self, prelude::*};
+use std::iter;
+
+pub fn decode<'a>(mode: isize, mut ip: usize, memory: &'a [isize]) -> impl Iterator<Item=isize> + 'a {
+    let mut idx = 0;
+    iter::from_fn(move || {
+        ip += 1;
+        let arg = memory[ip];
+        let arg_mode = (mode / 10isize.pow(idx)) % 10;
+        idx += 1;
+        Some(match arg_mode {
+            0 => memory[usize::try_from(arg).unwrap()],
+            1 => arg,
+            _ => unimplemented!(),
+        })
+    })
+}
 
 pub fn exec(memory: &mut [isize]) {
     let mut ip = 0;
@@ -7,170 +23,86 @@ pub fn exec(memory: &mut [isize]) {
         let instr = memory[ip];
         let opcode = instr % 100;
         let mode = instr / 100;
+        let mut decoder = decode(mode, ip, &memory);
         let arity = match opcode {
             1 => {
-                let a_mode = mode % 10;
-                let b_mode = (mode / 10) % 10;
-                let c_mode = (mode / 100) % 10;
-                assert_eq!(c_mode, 0);
-
-                let a = memory[ip + 1];
-                let b = memory[ip + 2];
+                let a = decoder.next().unwrap();
+                let b = decoder.next().unwrap();
                 let c = memory[ip + 3];
+                drop(decoder);
 
-                let a_val = match a_mode {
-                    0 => memory[usize::try_from(a).unwrap()],
-                    1 => a,
-                    _ => unimplemented!(),
-                };
-                let b_val = match b_mode {
-                    0 => memory[usize::try_from(b).unwrap()],
-                    1 => b,
-                    _ => unimplemented!(),
-                };
-
-                memory[usize::try_from(c).unwrap()] = a_val + b_val;
+                memory[usize::try_from(c).unwrap()] = a + b;
                 3
             }
             2 => {
-                let a_mode = mode % 10;
-                let b_mode = (mode / 10) % 10;
-                let c_mode = (mode / 100) % 10;
-                assert_eq!(c_mode, 0);
-
-                let a = memory[ip + 1];
-                let b = memory[ip + 2];
+                let a = decoder.next().unwrap();
+                let b = decoder.next().unwrap();
                 let c = memory[ip + 3];
+                drop(decoder);
 
-                let a_val = match a_mode {
-                    0 => memory[usize::try_from(a).unwrap()],
-                    1 => a,
-                    _ => unimplemented!(),
-                };
-                let b_val = match b_mode {
-                    0 => memory[usize::try_from(b).unwrap()],
-                    1 => b,
-                    _ => unimplemented!(),
-                };
-
-                memory[usize::try_from(c).unwrap()] = a_val * b_val;
+                memory[usize::try_from(c).unwrap()] = a * b;
                 3
             }
             3 => {
-                let a_mode = mode % 10;
-                assert_eq!(a_mode, 0);
                 let a = memory[ip + 1];
-                memory[usize::try_from(a).unwrap()] = 5; // TODO: stdin
+                drop(decoder);
+
+                print!("input: ");
+                io::stdout().flush().unwrap();
+                let mut buf = String::new();
+                io::stdin().read_line(&mut buf).unwrap();
+
+                memory[usize::try_from(a).unwrap()] = buf.trim().parse().unwrap();
                 1
             }
             4 => {
-                let a_mode = mode % 10;
-                let a = memory[ip + 1];
-                let a_val = match a_mode {
-                    0 => memory[usize::try_from(a).unwrap()],
-                    1 => a,
-                    _ => unimplemented!(),
-                };
-                println!("{}", a_val);
+                let a = decoder.next().unwrap();
+                drop(decoder);
+
+                println!("{}", a);
                 1
             }
             5 => {
-                let a_mode = mode % 10;
-                let b_mode = (mode / 10) % 10;
+                let a = decoder.next().unwrap();
+                let b = decoder.next().unwrap();
+                drop(decoder);
 
-                let a = memory[ip + 1];
-                let b = memory[ip + 2];
-
-                let a_val = match a_mode {
-                    0 => memory[usize::try_from(a).unwrap()],
-                    1 => a,
-                    _ => unimplemented!(),
-                };
-                let b_val = match b_mode {
-                    0 => memory[usize::try_from(b).unwrap()],
-                    1 => b,
-                    _ => unimplemented!(),
-                };
-
-                if a_val != 0 {
-                    ip = b_val.try_into().unwrap();
+                if a != 0 {
+                    ip = b.try_into().unwrap();
                     -1
                 } else {
                     2
                 }
             }
             6 => {
-                let a_mode = mode % 10;
-                let b_mode = (mode / 10) % 10;
+                let a = decoder.next().unwrap();
+                let b = decoder.next().unwrap();
+                drop(decoder);
 
-                let a = memory[ip + 1];
-                let b = memory[ip + 2];
-
-                let a_val = match a_mode {
-                    0 => memory[usize::try_from(a).unwrap()],
-                    1 => a,
-                    _ => unimplemented!(),
-                };
-                let b_val = match b_mode {
-                    0 => memory[usize::try_from(b).unwrap()],
-                    1 => b,
-                    _ => unimplemented!(),
-                };
-
-                if a_val == 0 {
-                    ip = b_val.try_into().unwrap();
+                if a == 0 {
+                    ip = b.try_into().unwrap();
                     -1
                 } else {
                     2
                 }
             }
             7 => {
-                let a_mode = mode % 10;
-                let b_mode = (mode / 10) % 10;
-                let c_mode = (mode / 100) % 10;
-                assert_eq!(c_mode, 0);
-
-                let a = memory[ip + 1];
-                let b = memory[ip + 2];
+                let a = decoder.next().unwrap();
+                let b = decoder.next().unwrap();
                 let c = memory[ip + 3];
+                drop(decoder);
 
-                let a_val = match a_mode {
-                    0 => memory[usize::try_from(a).unwrap()],
-                    1 => a,
-                    _ => unimplemented!(),
-                };
-                let b_val = match b_mode {
-                    0 => memory[usize::try_from(b).unwrap()],
-                    1 => b,
-                    _ => unimplemented!(),
-                };
-
-                memory[usize::try_from(c).unwrap()] = if a_val < b_val { 1 } else { 0 };
+                memory[usize::try_from(c).unwrap()] = if a < b { 1 } else { 0 };
 
                 3
             }
             8 => {
-                let a_mode = mode % 10;
-                let b_mode = (mode / 10) % 10;
-                let c_mode = (mode / 100) % 10;
-                assert_eq!(c_mode, 0);
-
-                let a = memory[ip + 1];
-                let b = memory[ip + 2];
+                let a = decoder.next().unwrap();
+                let b = decoder.next().unwrap();
                 let c = memory[ip + 3];
+                drop(decoder);
 
-                let a_val = match a_mode {
-                    0 => memory[usize::try_from(a).unwrap()],
-                    1 => a,
-                    _ => unimplemented!(),
-                };
-                let b_val = match b_mode {
-                    0 => memory[usize::try_from(b).unwrap()],
-                    1 => b,
-                    _ => unimplemented!(),
-                };
-
-                memory[usize::try_from(c).unwrap()] = if a_val == b_val { 1 } else { 0 };
+                memory[usize::try_from(c).unwrap()] = if a == b { 1 } else { 0 };
 
                 3
             }
