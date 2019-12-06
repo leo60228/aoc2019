@@ -2,7 +2,11 @@ use std::convert::{TryFrom, TryInto};
 use std::io::{self, prelude::*};
 use std::iter;
 
-pub fn decode<'a>(mode: isize, mut ip: usize, memory: &'a [isize]) -> impl Iterator<Item=isize> + 'a {
+pub fn decode<'a>(
+    mode: isize,
+    mut ip: usize,
+    memory: &'a [isize],
+) -> impl Iterator<Item = isize> + 'a {
     let mut idx = 0;
     iter::from_fn(move || {
         ip += 1;
