@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 arrayvec = "0.5.1"
 rayon = "1.2.1"
+pathfinding = "2.0.0"
