@@ -1,23 +1,5 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::io::{self, prelude::*};
-use rayon::prelude::*;
-
-fn add_orbit<'a>(orbits: &mut HashMap<&'a str, HashSet<&'a str>>, a: &'a str, b: &'a str) {
-    let existing: HashSet<&'a str> = orbits
-        .iter()
-        .filter(|(_, v)| v.contains(a))
-        .map(|(&k, _)| k)
-        .collect();
-
-    for a in &existing {
-        add_orbit(orbits, a, b);
-    }
-
-    orbits
-        .entry(a.into())
-        .or_insert_with(HashSet::new)
-        .insert(b.into());
-}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut input = String::new();
@@ -29,12 +11,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut iter = pair.split(')');
         let a = iter.next().unwrap();
         let b = iter.next().unwrap();
-        add_orbit(&mut orbits, a, b);
+        orbits.insert(b, a);
     }
 
-    print!("\n total: ");
-    io::stdout().flush()?;
-    println!("{}", orbits.into_par_iter().map(|(_, x)| x.len()).sum::<usize>());
+    let mut count = 0;
+
+    for (_, mut orbit) in &orbits {
+        count += 1;
+        while let Some(planet) = orbits.get(orbit) {
+            count += 1;
+            orbit = planet;
+        }
+    }
+
+    println!("total: {}", count);
 
     Ok(())
 }
