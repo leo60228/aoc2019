@@ -1,6 +1,17 @@
-use pathfinding::directed::dfs::dfs;
 use std::collections::{HashMap, HashSet};
 use std::io::{self, prelude::*};
+
+fn parents<'a>(orbits: &HashMap<&'a str, &'a str>, mut orbit: &'a str) -> HashSet<&'a str> {
+    let mut parents = HashSet::new();
+    parents.insert(orbit);
+
+    while let Some(planet) = orbits.get(orbit) {
+        parents.insert(planet);
+        orbit = planet;
+    }
+
+    parents
+}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut input = String::new();
@@ -17,27 +28,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .collect();
 
-    let path = dfs(
-        "YOU",
-        |k| {
-            orbits.get(k).into_iter().copied().chain(
-                orbits
-                    .iter()
-                    .filter(|(_, v)| *v == k)
-                    .map(|(&k, _)| k)
-                    .collect::<HashSet<_>>()
-                    .into_iter(),
-            )
-        },
-        |k| *k == "SAN",
-    );
+    let you = parents(&orbits, "YOU");
+    let san = parents(&orbits, "SAN");
+    let intersection = you.intersection(&san).count();
+    let steps = you.len() + san.len() - (2 * intersection) - 2;
 
-    if let Some(path) = path {
-        println!("path: {:?}", path);
-        println!("steps: {}", path.len() - 3);
-    } else {
-        println!("no path");
-    }
+    println!("steps: {:?}", steps);
 
     Ok(())
 }
