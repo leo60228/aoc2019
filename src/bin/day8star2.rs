@@ -22,12 +22,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for row in image.chunks(WIDTH) {
         for pixel in row {
-            print!("{}", match pixel {
-                0 => "█",
-                1 => "░",
-                2 => " ",
-                _ => unreachable!(),
-            });
+            print!(
+                "{}",
+                match pixel {
+                    0 => "█",
+                    1 => "░",
+                    2 => " ",
+                    _ => unreachable!(),
+                }
+            );
         }
         println!("");
     }
